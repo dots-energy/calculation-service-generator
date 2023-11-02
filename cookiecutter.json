@@ -1,0 +1,6 @@
+{
+  "_extensions": ["jinja2.ext.do", "jinja2.ext.debug"],
+  "service_name": "DEFAULT_VALUE",
+  "version": "DEFAULT_VALUE",
+  "calculations": "DEFAULT_VALUE"
+}

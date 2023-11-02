@@ -1,0 +1,12 @@
+default_context:
+    service_name: test2_econnection_service
+    version: 1.0.0
+    calculations:
+        energy_allocation:
+            receives:
+                test2_pv_installation_service:
+                    solar_energy:
+                        hourly_values: List[float]
+            sends:
+                econnection_run_time:
+                    time_seconds: List[List[float]]

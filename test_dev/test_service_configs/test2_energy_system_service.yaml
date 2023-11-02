@@ -1,0 +1,35 @@
+---
+# 'DOTS service-generator' Service description
+#
+# for all 'key: value' pairs: no spaces, no capitals (snake_case)
+# all values can be (should be) changed by the user
+# key names can be changed as well except when indicated as 'IMMUTABLE'
+#
+# 'variables' sections (service_config, new_step_data, calculations input/output data)
+#     consist of 0 or more items: 'variable_name: variable_type'
+# supported variable types are:  'int', 'float', 'str', 'bool', 'dict',
+#                                'List[int]', 'List[float]', 'List[str]', 'List[bool]'
+#
+# The 'new_step_data' variables should be same for all services
+# The 'calculations' output data names ('sends') should not contain duplicates
+# The 'calculations' input names ('receives') may contain duplicates,
+#     but the origin_service_name and variables have to be the same
+
+default_context:
+    service_name: test2_energy_system_service
+    version: 1.0.0
+    calculations:
+        weather_prediction:
+            receives:
+            sends:
+                solar_radiation:
+                    hourly_values: List[List[float]]
+        summarize:
+            receives:
+                test2_pv_installation_service:
+                    pv_installation_run_time:
+                        time_seconds: List[float]
+                test2_econnection_service:
+                    econnection_run_time:
+                        time_seconds: List[List[float]]
+            sends:

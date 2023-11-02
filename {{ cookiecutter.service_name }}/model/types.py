@@ -1,0 +1,3 @@
+
+EsdlId = str
+ServiceName = str

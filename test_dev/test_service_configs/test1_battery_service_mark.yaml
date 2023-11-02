@@ -1,0 +1,29 @@
+---
+# 'DOTS service-generator' Service description
+#
+# for all 'key: value' pairs: no spaces, no capitals (snake_case)
+# most values can be (should be) changed by the user as if indicated as 'IMMUTABLE'
+# some key names can be changed as well except when not indicated as 'IMMUTABLE'
+#
+# 'variables' sections (service_config, new_step_data, calculations input/output data)
+#     consist of 0 or more items: 'variable_name: variable_type'
+# supported variable types are:  'int', 'float', 'str', 'bool', 'dict',
+#                                'List[int]', 'List[float]', 'List[str]', 'List[bool]'
+#
+# The 'new_step_data' variables should be same for all services
+# The 'calculations' output data names ('sends') should not contain duplicates
+# The 'calculations' input names ('receives') may contain duplicates,
+#     but the origin_service_name and variables have to be the same
+
+default_context:
+    service_name: battery_service_mark
+    version: 0.0.1
+    calculations:
+        update_charge_state:
+            receives:
+                pv_panel_service_mark:
+                    solar_energy:
+                        hourly_values: List[float]
+            sends:
+                battery_run_time:
+                    time_seconds: float

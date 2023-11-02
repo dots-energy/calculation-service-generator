@@ -1,0 +1,27 @@
+---
+# 'DOTS service-generator' Service description
+#
+# for all 'key: value' pairs: no spaces, no capitals (snake_case)
+# all values can be (should be) changed by the user
+# key names can be changed as well except when indicated as 'IMMUTABLE'
+#
+# 'variables' sections (service_config, new_step_data, calculations input/output data)
+#     consist of 0 or more items: 'variable_name: variable_type'
+# supported variable types are:  'int', 'float', 'str', 'bool', 'dict',
+#                                'List[int]', 'List[float]', 'List[str]', 'List[bool]'
+#
+# The 'new_step_data' variables should be same for all services
+# The 'calculations' output data names ('sends') should not contain duplicates
+# The 'calculations' input names ('receives') may contain duplicates,
+#     but the origin_service_name and variables have to be the same
+
+default_context: # 'default_context'-key IMMUTABLE
+    service_name: mock_service1 # 'service_name'-key IMMUTABLE
+    version: 1.0.0 # 'version'-key IMMUTABLE
+    calculations: # 'calculations'-key IMMUTABLE
+        calc1:
+            receives: # 'receives'-key IMMUTABLE
+            sends: # 'sends'-key IMMUTABLE
+                data_object1:
+                    variable1: List[float]
+                    variable2: dict

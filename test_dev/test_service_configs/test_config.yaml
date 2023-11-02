@@ -1,0 +1,13 @@
+---
+default_context:
+    service_name: battery_service_mark
+    version: 0.0.1
+    calculations:
+        update_charge_state:
+            receives:
+                pv_panel_service_mark:
+                    solar_energy:
+                        hourly_values: List[float]
+            sends:
+                battery_run_time:
+                    time_seconds: float

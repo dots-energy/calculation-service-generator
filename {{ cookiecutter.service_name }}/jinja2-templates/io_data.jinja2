@@ -1,0 +1,206 @@
+{# generates class definition #}
+{% macro io_class(main_topic_name, data_name, variables, lifecycle_topic) %}
+class {{ snake2pascal(data_name) }}(IODataInterface):
+    def __init__(self, origin_esdl_id: EsdlId = None
+        {%- for var_name, var_type in variables|dictsort -%}
+            , {{ var_name }}: {{ var_type }} = None
+        {%- endfor -%}
+                 ):
+        self.origin_esdl_id = origin_esdl_id
+        {% for var_name, var_type in variables | dictsort -%}
+        self.{{ var_name }}: {{ var_type }} = {{ var_name }}
+        {% endfor %}
+    @overrides
+    def set_values_from_serialized_protobuf(self, serialized_message: bytes):
+        config_data = messages.{{ snake2pascal(data_name) }}()
+        config_data.ParseFromString(serialized_message)
+        self.origin_esdl_id = config_data.origin_esdl_id
+        {%- for var_name, var_type in variables | dictsort %}
+        self.{{ var_name }} =
+            {%- if 'List[List[float]]' in var_type -%}
+                {{ ' ' }}[list_floats_message.doubles for list_floats_message in config_data.{{ var_name }}]
+            {%- elif 'dict' in var_type -%}
+                {{ ' ' }}json.loads(config_data.{{ var_name }})
+            {%- else -%}
+                {{ ' ' }}config_data.{{ var_name }}
+            {%- endif %}
+        {%- endfor %}
+
+    @overrides
+    def get_values_as_serialized_protobuf(self) -> bytes:
+        protobuf_message = messages.{{ snake2pascal(data_name) }}()
+        protobuf_message.origin_esdl_id = self.origin_esdl_id
+        {%- for var_name, var_type in variables | dictsort %}
+            {%- if 'List[List[float]]' in var_type %}
+        list_of_floats_messages = []
+        for list_of_floats in self.{{ var_name }}:
+            list_of_floats_message = messages.ListOfDoubles()
+            list_of_floats_message.doubles.extend(list_of_floats)
+            list_of_floats_messages.append(list_of_floats_message)
+        protobuf_message.{{ var_name }}.extend(list_of_floats_messages)
+            {%- elif 'List' in var_type %}
+        protobuf_message.{{ var_name }}.extend(self.{{ var_name }})
+            {%- elif 'dict' in var_type %}
+        protobuf_message.{{ var_name }} = json.dumps(self.{{ var_name }})
+            {%- else %}
+        protobuf_message.{{ var_name }} = self.{{ var_name }}
+            {%- endif %}
+        {%- endfor %}
+        return protobuf_message.SerializeToString()
+
+    @classmethod
+    @overrides
+    def get_name(cls) -> str:
+        return "{{ data_name }}"
+
+    @classmethod
+    @overrides
+    def get_main_topic(cls) -> str:
+        {%- if lifecycle_topic == true %}
+        return '/lifecycle/dots-so/model/'
+        {%- else %}
+        return '/data/{{ main_topic_name }}/model'
+        {%- endif %}
+
+    @classmethod
+    @overrides
+    def get_variable_descr(cls) -> str:
+        return "{{ variables }}"
+{% endmacro %}
+
+{# generates input class definitions #}
+{% macro input_classes(cookiecutter) %}
+    {%- set input_class_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort -%}
+                {%- for data_name, variables in service_data | dictsort %}
+                    {%- if data_name not in input_class_names -%}
+                        {% do input_class_names.append(data_name) %}
+                        {{ io_class(service_name, data_name, variables, false) }}
+                    {%- endif -%}
+                {%- endfor -%}
+            {% endfor -%}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}
+
+{# generates output class definitions #}
+{% macro output_classes(cookiecutter) %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.sends is not none -%}
+            {%- for data_name, variables in calc_data.sends | dictsort %}
+                {{ io_class(cookiecutter.service_name, data_name, variables, false) }}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}
+
+{# gives input service names separated by a comma #}
+{% macro input_service_names(cookiecutter) %}
+    {%- set ns = namespace(first_item = true) -%}
+    {%- set service_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort -%}
+                {%- if service_name not in service_names -%}
+                    {% do service_names.append(service_name) %}
+                    {{- "" if ns.first_item else ", " }}'{{ service_name }}'
+                    {%- set ns.first_item = false -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}
+
+{# gives input class names preceded by a comma #}
+{% macro input_class_names(cookiecutter) %}
+    {%- set input_class_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort -%}
+                {%- for data_name, variables in service_data | dictsort -%}
+                    {%- if data_name not in input_class_names -%}
+                        {% do input_class_names.append(data_name) %}
+                        {{- ',' }} {{ snake2pascal(data_name) }}
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}
+
+{# gives output class names preceded by a comma #}
+{% macro output_class_names(cookiecutter) %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.sends is not none -%}
+            {%- for output_data in calc_data.sends -%}
+                {{ ',' }} {{snake2pascal(output_data)}}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}
+
+{# converts string from snake_case to PascalCase #}
+{% macro snake2pascal(input_string) %}
+    {%- set string_list = input_string.split('_') -%}
+    {%- for string in string_list -%}
+        {{ string | capitalize }}
+    {%- endfor -%}
+{% endmacro %}
+
+{# generates proto message definition #}
+{% macro proto_message(data_name, variables) %}
+message {{ snake2pascal(data_name) }} {
+  string origin_esdl_id = 1;
+    {%- for var_name, var_type in variables|dictsort -%}
+        {%- if 'List[int]' in var_type %}
+  repeated int32 {{ var_name }} = {{ loop.index + 1 }};
+        {%- elif 'List[List[float]]' in var_type %}
+  repeated ListOfDoubles {{ var_name }} = {{ loop.index + 1 }};
+        {%- elif 'List[float]' in var_type %}
+  repeated double {{ var_name }} = {{ loop.index + 1 }};
+        {%- elif 'List[str]' in var_type %}
+  repeated string {{ var_name }} = {{ loop.index + 1 }};
+        {%- elif 'List[bool]' in var_type %}
+  repeated bool {{ var_name }} = {{ loop.index + 1 }};
+        {%- elif 'int' in var_type %}
+  int32 {{ var_name }} = {{ loop.index + 1 }};
+        {%- elif 'float' in var_type %}
+  double {{ var_name }} = {{ loop.index + 1 }};
+        {%- elif 'bool' in var_type %}
+  bool {{ var_name }} = {{ loop.index + 1 }};
+        {%- else %}
+  string {{ var_name }} = {{ loop.index + 1 }};
+        {%- endif %}
+    {%- endfor %}
+}
+{% endmacro %}
+
+{# generates input data proto messages #}
+{% macro input_classes_proto_message(cookiecutter) %}
+    {%- set input_class_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort -%}
+                {%- for data_name, variables in service_data | dictsort %}
+                    {%- if data_name not in input_class_names -%}
+                        {% do input_class_names.append(data_name) %}
+                        {{- proto_message(data_name, variables) }}
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}
+
+{# generates output data proto messages #}
+{% macro output_classes_proto_message(cookiecutter) %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.sends is not none -%}
+            {%- for data_name, variables in calc_data.sends | dictsort %}
+                {{- proto_message(data_name, variables) }}
+            {%- endfor -%}
+        {%- endif -%}
+    {%- endfor -%}
+{% endmacro %}

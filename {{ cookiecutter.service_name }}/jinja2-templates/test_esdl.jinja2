@@ -1,0 +1,16 @@
+{# number of input services #}
+{% macro nr_of_input_services(cookiecutter) %}
+    {%- set service_names = [] -%}
+    {%- set ns = namespace(nr_of_input_services = 0) -%}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort -%}
+                {%- if service_name not in service_names -%}
+                    {%- set ns.nr_of_input_services = ns.nr_of_input_services + 1 -%}
+                    {%- do service_names.append(service_name) -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif %}
+    {%- endfor -%}
+    {{- ns.nr_of_input_services -}}
+{% endmacro %}

@@ -1,0 +1,18 @@
+---
+default_context:
+    service_name: ev_asset
+    version: 0.0.1
+    service_config:
+        max_charge_power: float
+        v2g_enabled: bool
+        battery_capacity: float
+    step_data:
+        time_stamp: str
+    receives:
+        aggregator:
+            status_request:
+                time_stamp: str
+    sends:
+        current_status:
+            soc: float
+            current_status: int # [0 - Idle, 1 - Charging, 2 - Discharging]

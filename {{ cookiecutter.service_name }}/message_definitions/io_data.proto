@@ -1,0 +1,8 @@
+{% import 'jinja2-templates/io_data.jinja2' as io_data_j2 -%}
+syntax = "proto3";
+
+message ListOfDoubles {
+  repeated double doubles = 1;
+}
+{{ io_data_j2.input_classes_proto_message(cookiecutter)}}
+{{- io_data_j2.output_classes_proto_message(cookiecutter) -}}

@@ -1,0 +1,135 @@
+{%- import 'jinja2-templates/io_data.jinja2' as io_data_j2 %}
+{%- import 'jinja2-templates/service_calc.jinja2' as service_calc_j2 %}
+
+{# give default value based on type #}
+{%- macro initialize_input_data_classes(cookiecutter) %}
+    {%- set service_names = [] %}
+    {%- set input_class_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort %}
+                {%- if service_name not in service_names -%}
+                    {% do service_names.append(service_name) %}
+                        {%- for data_name, variables in service_data|dictsort %}
+                            {%- if data_name not in input_class_names -%}
+                                {% do input_class_names.append(data_name) %}
+    '{{ data_name }}': {{ service_calc_j2.class_call_default_values(data_name, variables) }},
+                        {%- endif -%}
+                    {% endfor %}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif %}
+    {%- endfor -%}
+{% endmacro %}
+
+{# give default value based on type #}
+{% macro send_default_input_data_classes_old(cookiecutter) %}
+    {%- set service_names = [] %}
+    {%- set input_class_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort %}
+                {%- if service_name not in service_names -%}
+                    {% do service_names.append(service_name) %}
+        # send all '{{ service_name }}' data objects, 'number_of' times
+        for i in range(len(connected_input_esdl_objects_dict['{{ service_name }}'])):
+            if len(connected_input_esdl_objects_dict['{{ service_name }}']['model_ids']):
+                model_id = connected_input_esdl_objects_dict['{{ service_name }}']['model_ids'][i]
+            else:
+                model_id = 'ANY_MODEL_ID'
+                    {%- for data_name, variables in service_data|dictsort %}
+                        {%- if data_name not in input_class_names -%}
+                            {% do input_class_names.append(data_name) %}
+            send_data({{ data_name }})
+            time.sleep(seconds_between_sends)
+                        {%- endif -%}
+                    {% endfor %}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif %}
+    {% endfor -%}
+{% endmacro %}
+
+{# give default value based on type #}
+{% macro send_default_input_data_classes(cookiecutter) %}
+    {%- set service_names = [] %}
+    {%- set input_class_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort %}
+                {%- if service_name not in service_names -%}
+                    {% do service_names.append(service_name) %}
+        # send all '{{ service_name }}' data objects, for each connected input ESDL object
+        for origin_esdl_id in expected_esdl_ids_dict['{{ service_name }}']:
+                    {%- for data_name, variables in service_data|dictsort %}
+                        {%- if data_name not in input_class_names -%}
+                            {% do input_class_names.append(data_name) %}
+            send_data(mock_input_data['{{ data_name }}'], origin_esdl_id)
+            time.sleep(seconds_between_sends)
+                        {%- endif -%}
+                    {% endfor %}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif %}
+    {% endfor -%}
+{% endmacro %}
+
+{# connected_input_models_dict #}
+{% macro connected_input_models_dict(cookiecutter) -%}
+    {
+    {%- set service_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort %}
+                {%- if service_name not in service_names -%}
+                    {%- do service_names.append(service_name) -%}
+                    {%- if service_names | length > 1 %}
+            "{{ service_name }}": {"number_of": "5", "model_ids": []},
+                    {%- else %}
+            "{{ service_name }}": {"number_of": "2", "model_ids": ["model_id1", "model_id2"]},
+                    {%- endif -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif %}
+    {%- endfor %}
+        }
+{% endmacro %}
+
+{# list of receiving services #}
+{% macro receive_services_names(cookiecutter) -%}
+    [
+    {%- set service_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort %}
+                {%- if service_name not in service_names -%}
+                    {%- if service_names|length > 0 -%}
+                        {{ ", " }}
+                    {%- endif -%}
+                    '{{ service_name }}'
+                    {%- do service_names.append(service_name) -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif %}
+    {%- endfor -%}
+        ]
+{% endmacro %}
+
+{# list of receiving services #}
+{% macro append_manual_esdl_calc_services(cookiecutter) -%}
+    {%- set service_names = [] %}
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort -%}
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort -%}
+                {%- if service_name not in service_names %}
+# calculation_services.append({
+#     'esdl_type': '< esdl type name >',  # specify the name of the ESDL asset type (e.g. 'PVInstallation', 'EConnection')
+#     'calc_service_name': '{{ service_name }}',
+#     'service_image_url': 'url_not_used_for_local_test'
+# })
+                    {%- do service_names.append(service_name) -%}
+                {%- endif -%}
+            {%- endfor -%}
+        {%- endif %}
+    {%- endfor -%}
+{% endmacro %}

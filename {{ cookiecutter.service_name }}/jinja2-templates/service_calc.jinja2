@@ -1,0 +1,153 @@
+{%- import 'jinja2-templates/io_data.jinja2' as io_data_j2 %}
+
+{# gives input and output class names separated by a comma #}
+{% macro import_io_classes(cookiecutter) %}
+from model.io.io_data import NewStep
+    {{- io_data_j2.input_class_names(cookiecutter) }}
+    {{- io_data_j2.output_class_names(cookiecutter) -}}
+{% endmacro %}
+
+{# if statements to calc functions #}
+{% macro ifs_calc_functions(cookiecutter) %}
+    {%- for calc_name in cookiecutter.calculations %}
+            if calc_name == '{{ calc_name }}':
+                output_data_tuple = self.{{ calc_name }}(**input_data_dict)
+    {%- endfor -%}
+{% endmacro %}
+
+{# gives the calc functions #}
+{% macro calc_functions(cookiecutter) %}
+    {%- set ns = namespace(first_data_class = '') -%}
+    {%- set ns = namespace(first_variable_name = '') -%}
+    {% for calc_name, calc_data in cookiecutter.calculations | dictsort %}
+    def {{ calc_name }}(self, new_step: NewStep
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort -%}
+                {%- for data_name, variables in service_data | dictsort -%}
+                    , {{ data_name }}_list: List[{{ io_data_j2.snake2pascal(data_name) }}]
+                    {%- if loop.first -%}
+                        {%- set ns.first_data_class = data_name -%}
+                        {%- for var_name, var_type in variables | dictsort -%}
+                            {%- if loop.first -%}
+                                {%- set ns.first_variable_name = var_name -%}
+                            {%- endif -%}
+                        {%- endfor -%}
+                    {%- endif -%}
+                {%- endfor -%}
+            {%- endfor -%}
+        {%- endif -%}
+    ) -> Optional[Tuple
+        {%- if calc_data.sends is not none -%}
+        [
+            {%- for output_data, variables in calc_data.sends | dictsort -%}
+                dict[EsdlId, {{ io_data_j2.snake2pascal(output_data) }}]
+                {{- ", " if not loop.last else "" -}}
+            {%- endfor -%}
+        ]
+        {%- endif -%}
+    ]:
+        # START user calc
+        LOGGER.info("calculation '{{ calc_name }}' started")
+
+        # get model parameters (as specified on the asset in the ESDL file) by something like this:
+        #   'self.esdl_object.name' or 'self.esdl_object.voltage'
+        # get start and end data by:
+        # start_date = datetime.strptime(new_step.parameters_dict['start_time_stamp'], '%Y-%m-%d %H:%M:%S')
+        # end_date = datetime.strptime(new_step.parameters_dict['end_time_stamp'], '%Y-%m-%d %H:%M:%S')
+
+        # Calculation(s) per ESDL object
+        {% if calc_data.sends is not none -%}
+            {%- for output_data, variables in calc_data.sends | dictsort %}
+        {{ output_data }}_dict: dict[EsdlId, {{ io_data_j2.snake2pascal(output_data) }}] = {}
+            {%- endfor -%}
+        {% endif %}
+        for esdl_id in self.esdl_ids:  # loop over all ESDL objects in this calculation model
+            {%- if calc_data.receives is not none -%}
+            # get input data objects for the current ESDL object by:
+            {{ ns.first_data_class }}_objects = []
+            for data_class in {{ ns.first_data_class }}_list:
+                for _, connected_esdl_ids in self.connected_input_esdl_objects_dict[esdl_id].items():
+                    if data_class.origin_esdl_id in connected_esdl_ids:
+                        {{ ns.first_data_class }}_objects.append(data_class)
+            {{ ns.first_variable_name }} = {{ ns.first_data_class }}_objects[0].{{ ns.first_variable_name }}
+            {%- endif %}
+
+            # write to influx db:
+            # time_step_nr = int(new_step.parameters_dict['time_step_nr'])
+            # self.influxdb_client.set_time_step_data_point(esdl_id, 'temperature', time_step_nr, float(time_step_nr * 2))
+            # if time_step_nr == self.nr_of_time_steps:
+            #     self.influxdb_client.set_summary_data_point(esdl_id, 'average_temperature', 15)
+
+            # logging:
+            # LOGGER.debug('debug message')
+            # LOGGER.info('info message')
+            # LOGGER.warning('warning message')
+            # LOGGER.error('error message')
+            # The log level can be set in the '.env' and '.env.docker' files: LOG_LEVEL=DEBUG/INFO/WARN/ERROR
+
+            # exceptions can be raised and will give an error message to the simulation orchestrator (stops the simulation):
+            # raise Exception('error message')
+            {% if calc_data.sends is not none -%}
+                {%- for output_data, variables in calc_data.sends | dictsort %}
+            {{ output_data }}_dict[esdl_id] = {{ class_call_default_values(output_data, variables) }}
+                {%- endfor %}
+            {%- endif %}
+
+        LOGGER.info("calculation '{{ calc_name }}' finished")
+        # END user calc
+
+        # return a list of all outputs:
+        return
+        {%- if calc_data.sends is not none -%}
+            {%- for output_data, variables in calc_data.sends | dictsort -%}
+                {{ " " + output_data }}_dict,
+            {%- endfor -%}
+        {%- else -%}
+            {{ " None" }}
+        {%- endif %}
+    {% endfor %}
+{% endmacro %}
+
+{# gives calculation output classes with default values #}
+{% macro output_with_values(cookiecutter) %}
+    {%- if cookiecutter.sends is not none -%}
+        {%- for output_data, variables in cookiecutter.sends | dictsort -%}
+            {{ class_call_default_values(output_data, variables) }}
+            {{- ", " if loop.first or not loop.last else "" -}}
+        {%- endfor -%}
+    {%- endif -%}
+{% endmacro %}
+
+{# give default value based on type #}
+{% macro default_value(var_type) %}
+    {%- if var_type == 'int' -%}
+        33
+    {%- elif var_type == 'float' -%}
+        2.4
+    {%- elif var_type == 'str' -%}
+        'ok'
+    {%- elif var_type == 'bool' -%}
+        True
+    {%- elif var_type == 'dict' -%}
+        {'var1': 'val1', 'var2': 'val2', 'var3': {'var4': 'val4', 'var5': 'val5'}}
+    {%- elif var_type == 'List[int]' -%}
+        [2, 1, 0]
+    {%- elif var_type == 'List[List[float]]' -%}
+        [[1, 2.6, -8.1, 10], [2, 5.2, -1.1, 20], [3, 2.2, -1.1, 0]]
+    {%- elif var_type == 'List[float]' -%}
+        [3.3, 2.2, -1.1, 0]
+    {%- elif var_type == 'List[str]' -%}
+        ['str1', 'str2']
+    {%- elif var_type == 'List[bool]' -%}
+        [True, False, False]
+    {%- endif -%}
+{% endmacro %}
+
+{# class call with default values #}
+{%- macro class_call_default_values(data_name, variables_dict) %}
+    {{- io_data_j2.snake2pascal(data_name) }}(esdl_id
+        {%- for var_name, var_type in variables_dict | dictsort -%}
+            {{- ", " -}}{{ default_value(var_type) }}
+        {%- endfor -%}
+    )
+{%- endmacro %}

@@ -1,0 +1,1 @@
+docker run --rm -v $(pwd)/test_service_configs/test1_battery_service.yaml:/usr/src/app/input/config.yaml -v $(pwd):/usr/src/app/output calculation-service-generator

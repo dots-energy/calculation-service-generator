@@ -1,0 +1,20 @@
+{% import 'jinja2-templates/io_data.jinja2' as io_data_j2 %}
+
+{# gives input class names preceded by a comma #}
+{%- macro input_class_names(cookiecutter) -%}
+    {
+    {%- for calc_name, calc_data in cookiecutter.calculations | dictsort %}
+            "{{ calc_name }}": [NewStep
+        {%- if calc_data.receives is not none -%}
+            {%- for service_name, service_data in calc_data.receives | dictsort -%}
+                {%- for data_name in service_data %}
+                    {{- ", " -}}
+                    {{ io_data_j2.snake2pascal(data_name) }}
+                {%- endfor -%}
+            {% endfor -%}
+        {%- endif -%}
+        ]
+        {{- ", " if not loop.last else "" }}
+    {%- endfor %}
+        }
+{%- endmacro %}

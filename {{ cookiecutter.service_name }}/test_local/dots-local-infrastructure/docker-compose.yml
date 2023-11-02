@@ -1,0 +1,33 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  mosquitto:
+    image: eclipse-mosquitto
+#     network_mode: host
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./mqtt_passwd:/mosquitto/config/mqtt_passwd
+
+  influxdb:
+    image: influxdb:1.7
+    ports:
+      - "8086:8086"
+      - "8998:8088"
+    volumes:
+      - influxdb-storage:/var/lib/influxdb
+
+  grafana:
+    image: grafana/grafana:7.4.5
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_PANELS_DISABLE_SANITIZE_HTML=true
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+
+volumes:
+  grafana-storage:
+  influxdb-storage:

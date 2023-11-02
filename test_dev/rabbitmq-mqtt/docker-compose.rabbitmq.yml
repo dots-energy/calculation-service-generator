@@ -1,0 +1,15 @@
+services:
+  rabbitmq:
+    container_name: rabbitmq-mqtt
+    image: rabbitmq:3.10-management
+    env_file: rabbitmq.env
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./create_users.sh:/create_users.sh
+    command: bash -c "
+        rabbitmq-plugins enable --offline rabbitmq_management &&
+        rabbitmq-plugins enable --offline rabbitmq_mqtt &&
+        rabbitmq-plugins enable --offline rabbitmq_web_mqtt &&
+        /create_users.sh
+        "
