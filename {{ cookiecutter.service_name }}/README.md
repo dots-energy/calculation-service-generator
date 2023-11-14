@@ -1,7 +1,7 @@
 # {{ cookiecutter.service_name }}
 
-This calculation service was created using the MCS Calculation Service Generator. More information on MCS can be found
-in the [wiki](https://ci.tno.nl/gitlab/groups/dots/-/wikis/home).
+This calculation service was created using the Dots Calculation Service Generator. More information on Dots can be found
+in the [wiki](https://github.com/dots-energy/simulation-orchestrator/wiki).
 
 ## Development
 
@@ -21,11 +21,11 @@ Logic should be implemented in these functions.
 
 When the service is ready, a docker image of it should be pushed to a repository available to the Simulation
 Orchestrator on Azure.
-To build and push a docker image to ci.tno.nl/dots, login:  
-`docker login -u <ci.tno.nl email addresss> ci.tnl.nl`  
+To build and push a docker image to dockerhub, login:  
+`docker login -u dotsenergyframework`  
 followed by:  
-`deploy/build_and_push_image_ci_tno_dots_go-e.sh`.   
-The image is now available to use by MCS on a Azure or local kind cluster.
+`deploy/build_and_push_image_dockerhub.sh`.   
+The image is now available to use by Dots on a Azure or local kind cluster.
 
 ## Local testing
 

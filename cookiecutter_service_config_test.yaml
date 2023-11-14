@@ -1,0 +1,33 @@
+---
+default_context:
+    service_name: service_name
+    version: 1.0.0
+    calculations:
+        calc1:
+            receives:
+                origin_service1:
+                    input_data1:
+                        input1_var1: bool
+                        input1_var2: List[List[float]]
+                    input_data2:
+                        input2_var1: dict
+                        input2_var2: List[float]
+                        input2_var3: float
+            sends:
+                output_data1:
+                    output1_var1: float
+        calc2:
+            receives:
+                origin_service1:
+                    input_data1:
+                        input1_var1: bool
+                        input1_var2: List[List[float]]
+                origin_service2:
+                    input_data3:
+                        input3_var1: float
+            sends:
+                output_data2:
+                    output2_var1: List[str]
+                    output2_var2: float
+                output_data3:
+                    output3_var1: dict

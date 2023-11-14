@@ -4,7 +4,7 @@ The calculation service generator is based on the open source
 [**cookiecutter**](https://github.com/cookiecutter/cookiecutter),
 [**protobuf**](https://github.com/protocolbuffers/protobuf) and [**black**](https://github.com/psf/black) libraries.
 It generates, compiles and lints a boilerplate MCS calculation service project.  
-On the [MCS wiki](https://ci.tno.nl/gitlab/groups/dots/-/wikis/home#create-calculation-services) you can find how the
+On the [MCS wiki](https://github.com/dots-energy/simulation-orchestrator/wiki#create-calculation-services) you can find how the
 calculation service generator is used.
 
 ## Repository Structure
@@ -45,7 +45,7 @@ The repository contains several folders with different purposes:
 Install requirements.txt in a Python 3.9 environment.
 To test the code a boilerplate project needs to be created which can subsequently be tested.
 This can be done by running the code in a docker container as described in
-[MCS wiki](https://ci.tno.nl/gitlab/groups/dots/-/wikis/home#create-boiler-plate-service). This also contains a
+[MCS wiki](https://github.com/dots-energy/simulation-orchestrator/wiki#create-boilerplate-service). This also contains a
 description and example of the needed configuration `.yaml` file.
 For this the code needs to build and pushed to a docker image.
 

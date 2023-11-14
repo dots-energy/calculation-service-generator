@@ -202,6 +202,7 @@ fi
 
 # Compile protobuf files
 echo -e "${IC}INFO${NC}: compiling protocol buffers using $BACKEND_PROTOC"
+echo  output/$OUT_PATH/$PROJECT_NAME/
 cd output/$OUT_PATH/$PROJECT_NAME/
 protoc -I ./message_definitions/ --python_out ./model/io/messages/ ./message_definitions/*.proto
 
