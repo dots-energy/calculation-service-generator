@@ -117,9 +117,6 @@ class MqttClient:
                     self._send_parameterized()
                     calc_names_all_input_received = []
                 else:
-                    if data_name == NEW_STEP:  # reset data on new time step
-                        self.input_data_inventory.delete_all_received_input_data()
-
                     # add input data and receive a list of calculations that have all required input available
                     calc_names_all_input_received = self.input_data_inventory.add_input(
                         main_topic, data_name, msg.payload
@@ -131,6 +128,7 @@ class MqttClient:
 
                 if self.input_data_inventory.all_calcs_done():
                     self._send_calculations_done()
+                    self.input_data_inventory.delete_all_received_input_data()
         except Exception as ex:
             error_message = str(ex) + traceback.format_exc()
 
