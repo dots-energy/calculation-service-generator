@@ -83,7 +83,7 @@ class InputDataInventory:
                 f" added '{data_name}' data for service '{{ cookiecutter.service_name }}': {input_class_instance.get_variable_descr()}")
 
         # per calc, check if all input data is present
-        non_executed_calc_names_input_received = self._get_calcs_with_all_input_received()
+        non_executed_calc_names_input_received = self._get_new_calcs_with_all_input_received()
 
         self.lock.release()
         # return list of calc names that have received all required input data
