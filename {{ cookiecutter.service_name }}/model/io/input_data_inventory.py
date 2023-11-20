@@ -36,15 +36,19 @@ class InputDataInventory:
 
         # keep track of which calculations are done
         self.calcs_done = []
+        self.calc_names_all_received = []
 
     # reset input_data_dict to empty lists for each data type, and reset calcs_done
     def delete_all_received_input_data(self):
         self.lock.acquire()
+        LOCAL_LOGGER.debug("Removing all input data...")
         for calc_name, calc_input_classes in self.calcs_input_classes.items():
             for input_class in calc_input_classes:
                 if input_class.get_name:
                     self.input_data_dict[input_class.get_name()] = []
         self.calcs_done = []
+        self.calc_names_all_received = []
+        LOCAL_LOGGER.debug("All input data removed!")
         self.lock.release()
 
     def set_expected_esdl_ids_for_input_data(self, connected_input_esdl_objects_dict: dict):
@@ -79,11 +83,11 @@ class InputDataInventory:
                 f" added '{data_name}' data for service '{{ cookiecutter.service_name }}': {input_class_instance.get_variable_descr()}")
 
         # per calc, check if all input data is present
-        calc_names_all_received = self._get_calcs_with_all_input_received()
+        non_executed_calc_names_input_received = self._get_calcs_with_all_input_received()
 
         self.lock.release()
         # return list of calc names that have received all required input data
-        return calc_names_all_received
+        return non_executed_calc_names_input_received
 
     # for a specific calculation, get the needed input data:
     def get_input_data(self, calc_name: str) -> dict[str, List[IODataInterface]]:
@@ -94,6 +98,9 @@ class InputDataInventory:
             else:
                 input_data[data_class.get_name() + '_list'] = self.input_data_dict[data_class.get_name()]
         return input_data
+
+    def is_step_active(self) -> bool:
+        return self.input_data_dict["new_step"] != {} and self.input_data_dict["new_step"] != None
 
     def _find_and_create_class(self, main_topic: str, data_name: str, serialized_values: bytes) -> IODataInterface:
         input_class_instance = None  # avoid multiple adding (input can be used by multiple calculations)
@@ -121,8 +128,8 @@ class InputDataInventory:
                 f"The data class '{input_class.get_name()}' does not have the correct variables."
                 f"\nVariables required: {input_class.get_variable_descr()}")
 
-    def _get_calcs_with_all_input_received(self) -> List[str]:
-        calc_names_all_received = []
+    def _get_new_calcs_with_all_input_received(self) -> List[str]:
+        return_val = []
         for calc_name, calc_input_classes in self.calcs_input_classes.items():
             if calc_name not in self.calcs_done:  # check if all input available per calculation
                 all_received = True
@@ -137,10 +144,15 @@ class InputDataInventory:
                     if nr_of_data_class_objects_received < nr_of_data_class_objects_expected:
                         all_received = False
 
-                if all_received:
-                    calc_names_all_received.append(calc_name)
-                    self.calcs_done.append(calc_name)
-        return calc_names_all_received
+                if all_received and calc_name not in self.calc_names_all_received:
+                    self.calc_names_all_received.append(calc_name)
+                    return_val.append(calc_name)
+        return return_val
+
+    def set_calc_done(self, calc_name : str):
+        self.lock.acquire()
+        self.calcs_done.append(calc_name)
+        self.lock.release()
 
     def all_calcs_done(self):
         return len(self.calcs_done) == len(self.calcs_input_classes)

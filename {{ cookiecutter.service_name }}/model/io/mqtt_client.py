@@ -115,22 +115,22 @@ class MqttClient:
                     )
                     self._subscribe_data_topics(client, self.service_calc.connected_input_esdl_objects_dict)
                     self._send_parameterized()
-                    calc_names_all_input_received = []
+                    non_executed_calc_names_input_received = []
                 else:
-                    if data_name == NEW_STEP:  # reset data on new time step
-                        self.input_data_inventory.delete_all_received_input_data()
-
                     # add input data and receive a list of calculations that have all required input available
-                    calc_names_all_input_received = self.input_data_inventory.add_input(
+                    non_executed_calc_names_input_received = self.input_data_inventory.add_input(
                         main_topic, data_name, msg.payload
                     )
 
                 # do step for calculations that have received all required input
-                for calc_name in calc_names_all_input_received:
-                    self._do_step(calc_name)
+                if self.input_data_inventory.is_step_active():
+                    for calc_name in non_executed_calc_names_input_received:
+                        self._do_step(calc_name)
 
-                if self.input_data_inventory.all_calcs_done():
-                    self._send_calculations_done()
+                        if self.input_data_inventory.all_calcs_done():
+                            self._send_calculations_done()
+                            self.input_data_inventory.delete_all_received_input_data()
+
         except Exception as ex:
             error_message = str(ex) + traceback.format_exc()
 
@@ -219,6 +219,8 @@ class MqttClient:
             for output_data_dict in output_data_tuple:
                 for esdl_id, output_data in output_data_dict.items():
                     self._send_io_data(esdl_id, output_data)
+
+        self.input_data_inventory.set_calc_done(calc_name)
 
         SIM_LOGGER.debug(
             f"finished '{self.service_calc.service_name} ({self.service_calc.model_id}) - {calc_name}'"
