@@ -42,7 +42,7 @@ The repository contains several folders with different purposes:
 
 ## Development and testing
 
-Install requirements.txt in a Python 3.9 environment.
+Install requirements.txt in a Python 3.10 environment.
 To test the code a boilerplate project needs to be created which can subsequently be tested.
 This can be done by running the code in a docker container as described in
 [MCS wiki](https://github.com/dots-energy/simulation-orchestrator/wiki#create-boilerplate-service). This also contains a
@@ -53,7 +53,7 @@ For this the code needs to build and pushed to a docker image.
 
 Before usage an image needs to be pushed by running the script in the `ci` folder.
 
-### Testing during development
+## Testing during development
 
 A quicker way to test during development is to run the separate commands from the command line: cookiecutter needs to be
 run to create/update the project code, protobuf compile is used to create/update the protobuf`_pb2.py` messages.
