@@ -110,10 +110,11 @@ with open(test_esdl_file_path, "rb") as esdl_file:
 # per ESDL object:
 #     a dictionary with, per calculation service, a list of connected ESDL objects
 connected_input_esdl_objects_dict = {}
+energy_system = esdl_parser.get_energy_system(esdl_base64string)
 for esdl_id in esdl_ids:
     connected_input_esdl_objects_dict[esdl_id] = esdl_parser.get_connected_input_esdl_objects(esdl_id,
                                                                                               calculation_services,
-                                                                                              esdl_base64string)
+                                                                                              energy_system)
 # expected ESDL objects (id's), per calculation service providing input
 expected_esdl_ids_dict = {}
 for _, connected_input_esdl_objects in connected_input_esdl_objects_dict.items():

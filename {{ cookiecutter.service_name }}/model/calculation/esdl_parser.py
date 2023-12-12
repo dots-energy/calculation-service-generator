@@ -24,7 +24,6 @@ from model.io.log import LOCAL_LOGGER
 
 RECEIVES_SERVICE_NAMES_LIST = [{{- io_data_j2.input_service_names(cookiecutter)}}]
 
-
 def get_energy_system(esdl_base64string: str) -> EnergySystem:
     esdl_string = b64decode(esdl_base64string + b"==".decode("utf-8")).decode("utf-8")
     esh = EnergySystemHandler()
@@ -43,8 +42,7 @@ def get_model_esdl_object(esdl_id: EsdlId, energy_system: EnergySystem) -> esdl:
 
 
 def get_connected_input_esdl_objects(esdl_id: EsdlId, calculation_services: typing.List[dict],
-                                     esdl_base64string: str) -> dict[str, typing.List[EsdlId]]:
-    energy_system = get_energy_system(esdl_base64string)
+                                     energy_system: EnergySystem) -> dict[str, typing.List[EsdlId]]:
     model_esdl_obj = get_model_esdl_object(esdl_id, energy_system)
 
     connected_input_esdl_objects: dict[str, typing.List[EsdlId]] = {}

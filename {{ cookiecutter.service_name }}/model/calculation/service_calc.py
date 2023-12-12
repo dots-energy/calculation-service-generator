@@ -74,7 +74,7 @@ class ServiceCalc:
             self.connected_input_esdl_objects_dict[esdl_id] = esdl_parser.get_connected_input_esdl_objects(
                 esdl_id,
                 model_parameters['calculation_services'],
-                model_parameters['esdl_base64string']
+                self.esdl_energy_system
             )
 
         # Optional: initialize influx db data output (with example output data names)
