@@ -2,7 +2,7 @@
 
 # login first: docker login -u dotsenergyframework
 
-VERSION=0.0.3
+VERSION=0.0.5
 REPOSITORY="dotsenergyframework/calculation-service-generator"
 
 docker build -t ${REPOSITORY}:${VERSION} ./..
