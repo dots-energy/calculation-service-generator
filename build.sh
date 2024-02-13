@@ -154,8 +154,8 @@ fi
 $ROOT_PYTHON_PATH -c 'import yaml, sys; yaml.safe_load(sys.stdin)' < $CONFIG_PATH
 if [ $? -eq 0 ]; then
 	eval $(parse_yaml $CONFIG_PATH)
-	PROJECT_NAME=$default_context__service_name
-	SERVICE_NAME=$default_context__service_name
+	PROJECT_NAME=$default_context_service_name
+	SERVICE_NAME=$default_context_service_name
 else
 	echo -e "${EC}ERROR${NC}: $CONFIG_PATH is not a valid .yaml file"
 	exit
